@@ -1,47 +1,72 @@
-const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
+const axios = require("axios");
+const FormData = require("form-data");
 
 module.exports.config = {
- name: "edit",
- version: "1.0.0",
- hasPermssion: 0,
- credits: "𝐂𝐘𝐁𝐄𝐑 ☢️_𖣘 -𝐁𝐎𝐓 ⚠️ 𝑻𝑬𝑨𝑴_ ☢️",
- description: "editing image",
- commandCategory: "editing",
- usages: "reply to an image",
- cooldowns: 5
+    name: "edit",
+    version: "1.0.0",
+    hasPermssion: 0,
+    credits: "rX Abdullah",
+    description: "Reply photo & enhance/edit with name/position",
+    commandCategory: "Image",
+    usages: "!edit 4k | !edit draw right | !edit text Abdullah",
+    cooldowns: 5
 };
 
-module.exports.run = async function ({ api, event, args, message }) {
-  const prompt = args.join(" ");
-  const repliedImage = event.messageReply?.attachments?.[0];
+module.exports.run = async ({ api, event, args }) => {
+    try {
+        if (!event.messageReply || !event.messageReply.attachments) 
+            return api.sendMessage("Reply to a photo!", event.threadID);
 
-  if (!prompt || !repliedImage || repliedImage.type !== "photo") {
-    return message.reply("⚠️ | Please reply to a photo with your prompt to edit it.");
-  }
+        const attachment = event.messageReply.attachments[0];
+        if (attachment.type !== "photo")
+            return api.sendMessage("Reply must be a photo!", event.threadID);
 
-  const imgPath = path.join(__dirname, "cache", `${Date.now()}_edit.jpg`);
-  const waitMsg = await message.reply(`🔰𝗥𝗮𝗵𝗮𝘁_𝗕𝗼𝘁🔰 🧪 Editing image for: "${prompt}"...\nPlease wait...`);
+        // Download photo
+        const photoURL = attachment.url;
+        const tempPath = path.join(__dirname, "temp", `${Date.now()}.jpg`);
+        await fs.ensureDir(path.join(__dirname, "temp"));
+        const photoData = await axios.get(photoURL, { responseType: "arraybuffer" });
+        await fs.writeFile(tempPath, photoData.data);
 
-  try {
-    const imgURL = repliedImage.url;
-    const imageUrl = `https://edit-and-gen.onrender.com/gen?prompt=${encodeURIComponent(prompt)}&image=${encodeURIComponent(imgURL)}`;
-    const res = await axios.get(imageUrl, { responseType: "arraybuffer" });
+        // Parse command
+        const option = args[0]?.toLowerCase();
+        let body = {};
 
-    await fs.ensureDir(path.dirname(imgPath));
-    await fs.writeFile(imgPath, Buffer.from(res.data, "binary"));
+        if (option === "4k") {
+            body = { type: "4k", name: args[1] || "User" };
+        } else if (option === "draw") {
+            const position = args[1] || "middle"; // left, right, middle
+            body = { type: "draw", position, name: args[2] || "User" };
+        } else if (option === "text") {
+            const nameText = args.slice(1).join(" ") || "User";
+            body = { type: "text", name: nameText, position: "middle" };
+        } else {
+            return api.sendMessage("Invalid command option!", event.threadID);
+        }
 
-    await message.reply({
-      body: `🔰𝗥𝗮𝗵𝗮𝘁_𝗕𝗼𝘁🔰 ✅ | Edited image for: "${prompt}"`,
-      attachment: fs.createReadStream(imgPath)
-    });
+        // Send to API
+        const form = new FormData();
+        form.append("photo", fs.createReadStream(tempPath));
+        for (let key in body) form.append(key, body[key]);
 
-  } catch (err) {
-    console.error("EDIT Error:", err);
-    message.reply("❌সরি বস হচ্ছে না ");
-  } finally {
-    await fs.remove(imgPath);
-    api.unsendMessage(waitMsg.messageID);
-  }
+        const apiResp = await axios.post("https://rx-editing-api.onrender.com/api/process-image", form, {
+            headers: form.getHeaders()
+        });
+
+        if (apiResp.data.success) {
+            const outPath = apiResp.data.path;
+            await api.sendMessage({ attachment: fs.createReadStream(outPath) }, event.threadID, () => {
+                fs.removeSync(tempPath);
+                fs.removeSync(outPath);
+            });
+        } else {
+            api.sendMessage("Processing failed!", event.threadID);
+        }
+
+    } catch (err) {
+        console.error(err);
+        api.sendMessage("An error occurred!", event.threadID);
+    }
 };
