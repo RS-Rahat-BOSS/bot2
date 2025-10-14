@@ -10,7 +10,7 @@ const baseApiUrl = async () => {
 module.exports.config = {
   name: "fbcover",
   version: "6.9",
-  hasPermssion: 0,
+  hasPermssion: 2,
   credits: "Dipto",
   description: "Facebook cover",
   usePrefix: true,
