@@ -4,94 +4,62 @@ const path = require("path");
 
 module.exports.config = {
   name: "welcome",
-  version: "1.0.1",
+  version: "1.0.2",
   hasPermssion: 0,
-  credits: "SHAHADAT SAHU",
-  description: "Sends a random welcome/info message when user types the bot prefix alone",
+  credits: "SHAHADAT SAHU + Rahat Islam Edit",
+  description: "Auto welcome when only prefix is typed",
   commandCategory: "system",
-  usages: "/ (or any prefix)",
-  cooldowns: 5,
-  dependencies: {
-    request: "",
-    "fs-extra": "",
-    axios: ""
-  }
+  usages: "prefix only",
+  cooldowns: 5
 };
 
-module.exports.run = async function({ api, event }) {
-  try {
-    // get user message
-    const body = (event && event.body) ? String(event.body) : "";
-    const trimmed = body.trim();
+module.exports.handleEvent = async function ({ api, event }) {
+  if (!event.body) return;
 
-    // Accept prefix from global.config.PREFIX (string or array).
-    // Fallback to ['/'] if not set.
-    let prefixes = ['/'];
-    if (global && global.config && typeof global.config.PREFIX !== "undefined") {
-      if (Array.isArray(global.config.PREFIX)) prefixes = global.config.PREFIX.map(String);
-      else prefixes = [String(global.config.PREFIX)];
-    }
+  const body = event.body.trim();
+  let prefixes = ['/'];
 
-    // Helper: does the message equal ANY prefix (or prefix + spaces)?
-    const isPrefixMessage = prefixes.some(pfx => {
-      if (!pfx) return false;
-      // exact match
-      if (trimmed === pfx) return true;
-      // prefix + spaces (e.g. "+ " or "/   ")
-      if (trimmed.replace(new RegExp(`^${escapeRegExp(pfx)}`), "").trim() === "") return true;
-      return false;
-    });
+  // 🔹 বটের prefix কনফিগ পড়ে
+  if (global.config && global.config.PREFIX) {
+    prefixes = Array.isArray(global.config.PREFIX)
+      ? global.config.PREFIX
+      : [global.config.PREFIX];
+  }
 
-    if (!isPrefixMessage) {
-      // not a plain-prefix message -> do nothing here
-      return;
-    }
+  // 🔹 শুধুমাত্র prefix বা prefix+space হলে
+  const isPrefixOnly = prefixes.some(pfx =>
+    body === pfx || body.replace(new RegExp(`^${escapeRegExp(pfx)}`), "").trim() === ""
+  );
 
-    // --- If here: user typed the prefix alone -> send random welcome/info with image ---
+  if (!isPrefixOnly) return; // অন্য কিছু টাইপ করলে কিছু না
 
-    // texts (you can add or edit)
-    const messageList = [
-      `🌸 Assalamu Alaikum! 🌸\n\n✨ Welcome to the bot! 🎉\n\n📜 help ➤ View all commands\n🤖 baby ➤ Auto Chat\nℹ️ info ➤ About the bot\n\n💡 Pro Tip: Use the bot prefix before commands!\n🎊 Have fun and enjoy using my bot! 💝`,
-      `🌼 আসসালামু আলাইকুম!\n\nবট-এ স্বাগতম।\n\n"${prefixes.join('" বা "')} " যেটাই পিফিক্স ব্যবহার করো, সেটার পরে কমান্ড টাইপ করো।\n\n💡 সাহায্যের জন্য টাইপ করো: ${prefixes[0]}help\n`
-    ];
+  // ✅ র‍্যান্ডম টেক্সট ও ইমেজ পাঠানো
+  const messages = [
+    `🌸 Assalamu Alaikum, dear member! 🌸\n\n✨ Welcome to the bot! 🎉\n\n📜 ${prefixes[0]}help ➤ View all commands\n🤖 ${prefixes[0]}baby ➤ Auto Chat\nℹ️ ${prefixes[0]}info ➤ Bot Info\n\n💝 Have fun and enjoy!`,
+    `🌼 আসসালামু আলাইকুম 🌼\n\n"${prefixes.join('" বা "')}" পিফিক্স দিয়ে কমান্ড লিখলে বট কাজ করবে!\n\n💡 ${prefixes[0]}help ➤ কমান্ড লিস্ট\n✨ ${prefixes[0]}info ➤ বট তথ্য`
+  ];
 
-    // image links (update as you like)
-    const imageLinks = [
-      "https://i.imgur.com/pB7HjPS.jpeg",
-      "https://i.imgur.com/J5AT5tH.jpeg"
-    ];
+  const images = [
+    "https://i.imgur.com/pB7HjPS.jpeg",
+    "https://i.imgur.com/J5AT5tH.jpeg"
+  ];
 
-    const randomText = messageList[Math.floor(Math.random() * messageList.length)];
-    const randomImg = imageLinks[Math.floor(Math.random() * imageLinks.length)];
+  const text = messages[Math.floor(Math.random() * messages.length)];
+  const img = images[Math.floor(Math.random() * images.length)];
 
-    const imgPath = path.join(__dirname, "/cpt.jpg");
-    const req = request(randomImg);
-    const writeStream = fs.createWriteStream(imgPath);
+  const imgPath = path.join(__dirname, "prefix_welcome.jpg");
 
-    req.pipe(writeStream).on("close", () => {
+  request(img)
+    .pipe(fs.createWriteStream(imgPath))
+    .on("close", () => {
       api.sendMessage(
-        {
-          body: randomText,
-          attachment: fs.createReadStream(imgPath)
-        },
+        { body: text, attachment: fs.createReadStream(imgPath) },
         event.threadID,
-        () => {
-          // cleanup
-          try { fs.unlinkSync(imgPath); } catch (e) {}
-        }
+        () => fs.unlinkSync(imgPath)
       );
-    }).on("error", err => {
-      // If image download fails, still send text
-      api.sendMessage({ body: randomText }, event.threadID);
     });
-
-  } catch (err) {
-    // avoid crashing the bot
-    console.error("welcome command error:", err);
-  }
 };
 
-// small util to escape RegExp special chars
-function escapeRegExp(string) {
-  return String(string).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
