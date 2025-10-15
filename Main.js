@@ -47,7 +47,7 @@ const listbuiltinModules = require('module').builtinModules || [];
    --------------------------- */
 const BOT_ART = [
   '████████████████████████████████████████',
-  '∞∞SHAHADAT SAHU LOADED∞∞',
+  '⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡\n⚡       🔰 𝙍𝘼𝙃𝘼𝙏_𝙄𝙎𝙇𝘼𝙈 🔰         ⚡\n⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡',
   '==> Your service is live 🎉',
   '[ DATABASE ] Database connection established successfully'
 ].join('\n');
