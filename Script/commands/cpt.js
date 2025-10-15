@@ -4,62 +4,75 @@ const path = require("path");
 
 module.exports.config = {
   name: "welcome",
-  version: "1.0.2",
+  version: "1.0.0",
   hasPermssion: 0,
-  credits: "SHAHADAT SAHU + Rahat Islam Edit",
-  description: "Auto welcome when only prefix is typed",
+  credits: "SHAHADAT SAHU",
+  description: "Sends a random welcome or info message with a random picture",
   commandCategory: "system",
-  usages: "prefix only",
-  cooldowns: 5
+  usages: "/",
+  cooldowns: 5,
+  dependencies: {
+    request: "",
+    "fs-extra": "",
+    axios: ""
+  }
 };
 
-module.exports.handleEvent = async function ({ api, event }) {
-  if (!event.body) return;
+module.exports.run = async function({ api, event }) {
+  const prefix = global.config.PREFIX || "/";
+  const requestLib = global.nodemodule["request"];
+  const fsExtra = global.nodemodule["fs-extra"];
 
-  const body = event.body.trim();
-  let prefixes = ['/'];
+  // ✨ Message text
+  const messageList = [
+    `🌸 Assalamu Alaikum, dear member! 🌸
+✨ Welcome to the bot! 🎉
 
-  // 🔹 বটের prefix কনফিগ পড়ে
-  if (global.config && global.config.PREFIX) {
-    prefixes = Array.isArray(global.config.PREFIX)
-      ? global.config.PREFIX
-      : [global.config.PREFIX];
-  }
+📜 help ➤ View all commands
+🤖 baby ➤ Automatic Chat
+ℹ️ info ➤ About the bot
 
-  // 🔹 শুধুমাত্র prefix বা prefix+space হলে
-  const isPrefixOnly = prefixes.some(pfx =>
-    body === pfx || body.replace(new RegExp(`^${escapeRegExp(pfx)}`), "").trim() === ""
-  );
+💡 Pro Tip: Use "${prefix}" before all commands!
+🎊 Have fun and enjoy using my bot! 💝`,
 
-  if (!isPrefixOnly) return; // অন্য কিছু টাইপ করলে কিছু না
+    `🌼 Assalamu Alaikum! 🌺
+Welcome to my bot.
+You can explore, learn, and have fun! 🎉
 
-  // ✅ র‍্যান্ডম টেক্সট ও ইমেজ পাঠানো
-  const messages = [
-    `🌸 Assalamu Alaikum, dear member! 🌸\n\n✨ Welcome to the bot! 🎉\n\n📜 ${prefixes[0]}help ➤ View all commands\n🤖 ${prefixes[0]}baby ➤ Auto Chat\nℹ️ ${prefixes[0]}info ➤ Bot Info\n\n💝 Have fun and enjoy!`,
-    `🌼 আসসালামু আলাইকুম 🌼\n\n"${prefixes.join('" বা "')}" পিফিক্স দিয়ে কমান্ড লিখলে বট কাজ করবে!\n\n💡 ${prefixes[0]}help ➤ কমান্ড লিস্ট\n✨ ${prefixes[0]}info ➤ বট তথ্য`
+💡 Type "${prefix}help" to see all commands.
+✨ Enjoy your stay!`
   ];
 
-  const images = [
-    "https://i.imgur.com/pB7HjPS.jpeg",
-    "https://i.imgur.com/J5AT5tH.jpeg"
+  // Random image links
+  const imageLinks = [
+    "https://i.imgur.com/X1OPkox.jpg",
+    "https://i.imgur.com/fQZhwWg.jpg",
+    "https://i.imgur.com/ETDkFyf.jpg",
+    "https://i.imgur.com/vr59gnp.jpg",
+    "https://i.imgur.com/Ui9PHoY.jpg",
+    "https://i.imgur.com/tl6Lt8Y.jpg",
+    "https://i.imgur.com/7wZ1Ael.jpg",
+    "https://i.imgur.com/CQTzXUN.jpg",
+    "https://i.imgur.com/ObLm7Df.jpg",
+    "https://i.imgur.com/inxiATH.jpg"
   ];
 
-  const text = messages[Math.floor(Math.random() * messages.length)];
-  const img = images[Math.floor(Math.random() * images.length)];
+  // Random select
+  const randomText = messageList[Math.floor(Math.random() * messageList.length)];
+  const randomImg = imageLinks[Math.floor(Math.random() * imageLinks.length)];
 
-  const imgPath = path.join(__dirname, "prefix_welcome.jpg");
-
-  request(img)
-    .pipe(fs.createWriteStream(imgPath))
+  // Save image temporarily
+  const imgPath = path.join(__dirname, "/cpt.jpg");
+  requestLib(randomImg)
+    .pipe(fsExtra.createWriteStream(imgPath))
     .on("close", () => {
       api.sendMessage(
-        { body: text, attachment: fs.createReadStream(imgPath) },
+        {
+          body: randomText,
+          attachment: fsExtra.createReadStream(imgPath)
+        },
         event.threadID,
-        () => fs.unlinkSync(imgPath)
+        () => fsExtra.unlinkSync(imgPath)
       );
     });
 };
-
-function escapeRegExp(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
