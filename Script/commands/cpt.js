@@ -26,10 +26,10 @@ module.exports.run = async function({ api, event }) {
 🌺 Thank you so much for using my bot in your group ❤️‍🩹  
 😻 I hope all members enjoy! 🤗  
 
-☢️ To view commands 📌  
-/Help  
-/Bot  
-/Info  
+🔰To view commands 📌  
+-Help  
+-Bot  
+-Info  
 
 𝐁𝐨𝐭 𝐎𝐰𝐧𝐞𝐫 ➢ 🔰 𝗥𝗮𝗵𝗮𝘁_𝗜𝘀𝗹𝗮𝗺 🔰`;
 
@@ -38,7 +38,8 @@ module.exports.run = async function({ api, event }) {
 
     // GIF লিংকগুলো (Imgur থেকে)
     const gifs = [
-        'https://i.imgur.com/61Elnha.gif'
+        'https://i.imgur.com/61Elnha.gif',
+        'https://i.imgur.com/sW3Gtb4.gif'
     ];
 
     // র‍্যান্ডম GIF নির্বাচন
