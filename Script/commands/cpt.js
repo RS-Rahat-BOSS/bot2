@@ -39,6 +39,7 @@ module.exports.run = async function({ api, event }) {
     // GIF লিংকগুলো (Imgur থেকে)
     const gifs = [
         'https://i.imgur.com/61Elnha.gif',
+        'https://i.imgur.com/kSxNraO.gif',
         'https://i.imgur.com/sW3Gtb4.gif'
     ];
 
