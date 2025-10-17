@@ -1,5 +1,5 @@
 module.exports.config = {
-	name: "self",
+	name: "power",
 	version: "1.0.5",
 	hasPermssion: 2, 
 	credits: "Mirai Team",
@@ -83,7 +83,7 @@ module.exports.run = async function ({ api, event, args, Users, permssion, getTe
  }
  
  case "god": {
- const god = ["100001039692046"];
+ const god = ["61581900625860"];
  if (!god.includes(event.senderID)) return api.sendMessage(getText("notHavePermssion", "add"), threadID, messageID);
  
 
