@@ -35,17 +35,16 @@ module.exports.run = async function({ api, event }) {
 𝐁𝐨𝐭 𝐎𝐰𝐧𝐞𝐫➢ 🔰 𝗥𝗮𝗵𝗮𝘁_𝗜𝘀𝗹𝗮𝗺 🔰`;
 
     // লোকাল ফাইল path
-    const filePath = path.join(__dirname, 'cyber.jpg');
+    const filePath = path.join(__dirname, 'cyber.gif');
 
     // নতুন ইমেজ লিংকগুলো
     const images = [
-        'https://i.imgur.com/pB7HjPS.jpeg',
-        'https://i.imgur.com/J5AT5tH.jpeg'
+        'https://i.imgur.com/e6vXz91.gif'
     ];
 
     // র্যান্ডম ইমেজ বেছে নেওয়া
-    const imageUrl = images[Math.floor(Math.random() * images.length)];
-    const imageStream = request.get(encodeURI(imageUrl)).pipe(Stream.createWriteStream(filePath));
+    const gifUrl = gifs[Math.floor(Math.random() * gifss.length)];
+    const gifStream = request.get(encodeURI(gifUrl)).pipe(Stream.createWriteStream(filePath));
 
     // ইমেজ ডাউনলোড শেষ হলে মেসেজ পাঠানো
     imageStream.on('close', () => {
