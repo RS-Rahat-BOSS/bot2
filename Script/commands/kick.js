@@ -1,6 +1,6 @@
 module.exports.config = {
 	name: "kick",
-	version: "1.1.0", 
+	version: "1.2.0", 
 	hasPermssion: 0,
 	credits: "𝐂𝐘𝐁𝐄𝐑 ☢️_𖣘 -𝐁𝐎𝐓 ⚠️ 𝑻𝑬𝑨𝑴_ ☢️ + Fixed by GPT",
 	description: "Remove a tagged person from the group",
@@ -22,42 +22,40 @@ module.exports.languages = {
 	}
 };
 
-module.exports.run = async function({ api, event, getText, Threads }) {
+module.exports.run = async function({ api, event, getText }) {
 	try {
-		// Check if Threads exists
-		if (!Threads || typeof Threads.getData !== "function") {
-			return api.sendMessage("⚠️ Internal error: Threads module not found!", event.threadID);
-		}
+		// 🧠 Step 1: Get group info directly from Facebook API
+		let threadInfo = await api.getThreadInfo(event.threadID);
 
-		// Get thread info (compatible with new + old versions)
-		let threadData = await Threads.getData(event.threadID);
-		let dataThread = threadData.threadInfo || threadData;
-
-		if (!dataThread || !dataThread.adminIDs) {
+		if (!threadInfo || !threadInfo.adminIDs) {
 			return api.sendMessage("⚠️ Could not get group admin list!", event.threadID);
 		}
 
-		// Check if bot is admin
-		if (!dataThread.adminIDs.some(item => item.id == api.getCurrentUserID())) {
+		// 🧠 Step 2: Check if bot is admin
+		if (!threadInfo.adminIDs.some(item => item.id == api.getCurrentUserID())) {
 			return api.sendMessage(getText("needPermssion"), event.threadID, event.messageID);
 		}
 
-		// Get mentioned users
+		// 🧠 Step 3: Check mentions
 		let mention = Object.keys(event.mentions);
 		if (!mention[0]) {
 			return api.sendMessage(getText("missingTag"), event.threadID, event.messageID);
 		}
 
-		// Check if sender is admin
-		if (!dataThread.adminIDs.some(item => item.id == event.senderID)) {
+		// 🧠 Step 4: Check if sender is admin
+		if (!threadInfo.adminIDs.some(item => item.id == event.senderID)) {
 			return api.sendMessage("⚠️ You must be an admin to use this command!", event.threadID, event.messageID);
 		}
 
-		// Kick mentioned users
+		// 🧠 Step 5: Kick users
 		for (const id of mention) {
 			setTimeout(() => {
 				api.removeUserFromGroup(id, event.threadID, (err) => {
-					if (err) api.sendMessage(`❌ Failed to remove user: ${event.mentions[id]}`, event.threadID);
+					if (err) {
+						api.sendMessage(`❌ Failed to remove: ${event.mentions[id]}`, event.threadID);
+					} else {
+						api.sendMessage(`✅ Removed: ${event.mentions[id]}`, event.threadID);
+					}
 				});
 			}, 3000);
 		}
