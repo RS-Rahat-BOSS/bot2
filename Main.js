@@ -3,7 +3,7 @@ const moment = require('moment-timezone');
 const { readdirSync, readFileSync, writeFileSync, existsSync, unlinkSync, rm } = require('fs-extra');
 const { join, resolve } = require('path');
 const { execSync } = require('child_process');
-const logger = require('./utils/logger');
+const logger = require('./utils/log'); // 🔹 এখানে ঠিক করা হয়েছে
 const login = require('./utils/login');
 const axios = require('axios');
 
@@ -33,7 +33,6 @@ global.bot = {
     mainPath: process.cwd(),
     configPath: "",
     getTime: function(type) {
-        // For convenience, handles time strings like 'seconds', 'minutes', etc
         switch (type) {
             case 'seconds': return moment.tz('Asia/Dhaka').format('ss');
             case 'minutes': return moment.tz('Asia/Dhaka').format('mm');
@@ -123,7 +122,6 @@ for (const item of langData) {
     global.languages[head][key] = value;
 }
 
-// ============= LANGUAGE GET FUNCTION =============
 global.getText = function (section, key, ...params) {
     if (!global.languages.hasOwnProperty(section))
         throw __filename + ': Cannot find language section: ' + section;
@@ -135,7 +133,7 @@ global.getText = function (section, key, ...params) {
     return resultString;
 };
 
-// ============= LOAD APPSTATE (Facebook) =============
+// ============= LOAD APPSTATE =============
 let appStateFile, appState;
 try {
     appStateFile = resolve(join(
@@ -149,10 +147,8 @@ try {
     return;
 }
 
-
 // ============= BOT STARTUP FUNCTION =============
 async function onBot({ models }) {
-    // Handles loading and registering plugin commands, events, etc
     await login({ appState }, async (loginErr, api) => {
         if (loginErr) {
             logger.error(JSON.stringify(loginErr), 'ERROR');
@@ -161,7 +157,6 @@ async function onBot({ models }) {
         api.setOptions(global.config.FCAOption);
         writeFileSync(appStateFile, JSON.stringify(api.getAppState(), null, '\t'));
 
-        // Store current api
         global.bot.client = api;
         global.config.fullTime = moment.tz('Asia/Dhaka').format('HH:mm:ss DD/MM/YYYY');
         global.bot.timeStart = new Date().getTime();
@@ -174,7 +169,6 @@ async function onBot({ models }) {
         for (const filename of commandFiles) {
             try {
                 const commandModule = require(join(global.bot.mainPath, 'commands', filename));
-                // Validate module
                 if (
                     !commandModule.config ||
                     !commandModule.run ||
@@ -183,14 +177,12 @@ async function onBot({ models }) {
 
                 if (global.bot.commands.has(commandModule.config.name || '')) throw new Error(global.getText('plugins', 'nameExist'));
 
-                // Validate properties
                 if (
                     !commandModule.onLoad ||
                     typeof commandModule.onLoad !== 'function' ||
                     Object.keys(commandModule.onLoad).length == 0
                 ) logger.warn(global.getText('plugins', 'cantOnload', commandModule.config.name), 'WARNING');
 
-                // Load dependencies
                 if (
                     commandModule.config.dependencies &&
                     typeof commandModule.config.dependencies === 'object'
@@ -316,54 +308,32 @@ async function onBot({ models }) {
             }
         }
 
-        // SHOW ASCII ART AND BOOT TIMINGS
         console.log(BOT_ART);
-        logger.info(
-            global.getText('startup', 'Found', global.bot.commands.size, global.bot.events.size)
-        );
-        logger.info(
-            "Startup time: " +
-            ((Date.now() - global.bot.timeStart) / 1000).toFixed(2) +
-            "s"
-        );
+        logger.info(global.getText('startup', 'Found', global.bot.commands.size, global.bot.events.size));
+        logger.info("Startup time: " + ((Date.now() - global.bot.timeStart) / 1000).toFixed(2) + "s");
 
         writeFileSync(global.bot.configPath, JSON.stringify(global.config, null, 4), 'utf-8');
         unlinkSync(global.bot.configPath + '.temp');
 
-        // Handle listen handler
-        const listenHandler = require('./includes/listen.js')({
-            client: api,
-            models: models
-        });
+        const listenHandler = require('./includes/listen.js')({ client: api, models });
 
-        // Event Dispatcher
         function eventDispatcher(err, event) {
             if (err) {
                 logger.error(global.getText('plugins', 'errorFormat', JSON.stringify(err)), 'ERROR');
                 return;
             }
-            // Optionally filter system events or logs
-            if (["presence", "read_receipt", "typ"].includes(event.type))
-                return;
-            if (global.config.showLogs)
-                console.log(event);
+            if (["presence", "read_receipt", "typ"].includes(event.type)) return;
+            if (global.config.showLogs) console.log(event);
             return listenHandler(event);
         }
         global.listenHandler = api.listen(eventDispatcher);
 
-        // Ban checks
-        try {
-            await checkBan(api);
-        } catch (e) { }
+        try { await checkBan(api); } catch (e) {}
 
-        // Fallback if database is missing
-        if (!global.models) {
-            logger.error(global.getText('startup', 'notFoundDatabase'), 'ERROR');
-        }
+        if (!global.models) logger.error(global.getText('startup', 'notFoundDatabase'), 'ERROR');
     });
 }
 
-// ============= INIT DATABASE & START BOT =============
 (async () => {
     try {
         await sequelize.authenticate();
@@ -376,5 +346,4 @@ async function onBot({ models }) {
     }
 })();
 
-// Handle unhandled rejections
 process.on('unhandledRejection', (_err, _promise) => {});
